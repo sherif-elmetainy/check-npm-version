@@ -252,12 +252,26 @@ async fn process_package(client: &Client, package_name: String, declared_version
         latest_satisfying_time: None,
     };
 
+    let mut ignore_pre_release = true;
     let declared_req = VersionReq::parse(row.declared.as_str()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {}", row.declared, e.to_string())))?;
-    let declared_version = Version::parse(row.declared.as_str());
+    let declared_version = if row.declared.starts_with('@') || row.declared.starts_with('^') {
+        Version::parse(&row.declared[1..])
+    } else {
+        Version::parse(row.declared.as_str())
+    };
+    if declared_version.as_ref().is_ok() {
+        if !declared_version.as_ref().unwrap().pre.is_empty() {
+            ignore_pre_release = false;
+        }
+    }
+
 
     
     for (version, time) in std::mem::take(&mut info.time) {
         let parsed_version = Version::parse(&version).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {}", version, e.to_string())))?;
+        if ignore_pre_release && !parsed_version.pre.is_empty() {
+            continue;
+        }
         let time = DateTime::parse_from_rfc3339(time.as_str()).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {}", time, e.to_string())))?.to_utc();
 
         if row.latest.is_none() || parsed_version.ge(row.latest.as_ref().unwrap()) {
