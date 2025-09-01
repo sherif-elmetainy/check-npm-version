@@ -1,11 +1,42 @@
 use chrono::{DateTime, Utc};
 use semver::Version;
-use crate::processor::PackageVersionInfo;
+use crate::processor::{PackageJsonReport, PackageVersionInfo};
+
+// ANSI color codes (foreground)
+const RESET: &str = "\x1b[0m";
+const CYAN: u8 = 36;
+const WHITE: u8 = 37;
+const GREEN: u8 = 32;
+const BLUE: u8 = 34;
+const MAGENTA: u8 = 35;
+const YELLOW: u8 = 33;
+const BRIGHT_BLACK: u8 = 90;
+
+pub fn print_report(report: &PackageJsonReport) {
+    let mut separator_line = false;
+    // Print dependency table
+    if !report.dependencies.is_empty() {
+        print_report_table("Dependencies", &report.dependencies);
+        separator_line = true;       
+    }
+    if !report.dev_dependencies.is_empty() {
+        if separator_line {
+            println!();       
+        }
+        print_report_table("Development Dependencies", &report.dev_dependencies);
+    }
+    if !report.peer_dependencies.is_empty() {
+        if separator_line {
+            println!();
+        }
+        print_report_table("Peed Dependencies", &report.peer_dependencies);
+    }
+    
+}
 
 // Pretty ANSI table printer for PackageReportRow
-pub fn print_report_table(rows: &[PackageVersionInfo]) {
+fn print_report_table(title: &str, rows: &[PackageVersionInfo]) {
     // ANSI helpers
-    const RESET: &str = "\x1b[0m";
     fn bold(s: &str) -> String {
         format!("\x1b[1m{}{}", s, RESET)
     }
@@ -15,7 +46,7 @@ pub fn print_report_table(rows: &[PackageVersionInfo]) {
     fn bold_color(code: u8, s: &str) -> String {
         format!("\x1b[1;{}m{}{}", code, s, RESET)
     }
-
+    
     // Strip ANSI codes to compute widths
     fn strip_ansi(s: &str) -> String {
         let mut out = String::with_capacity(s.len());
@@ -38,7 +69,7 @@ pub fn print_report_table(rows: &[PackageVersionInfo]) {
         }
         out
     }
-
+    
     // Format a version + date cell; date on next line, dim gray
     fn fmt_ver(
         ver: &Option<Version>,
@@ -49,22 +80,25 @@ pub fn print_report_table(rows: &[PackageVersionInfo]) {
             (Some(v), Some(t)) => {
                 let date = t.format("%Y-%m-%d").to_string();
                 let ver_s = style(&v.to_string());
-                let date_s = color(90, &date); // bright black (gray)
+                let date_s = color(BRIGHT_BLACK, &date); // bright black (gray)
                 format!("{ver_s}\n{date_s}")
             }
             (Some(v), None) => style(&v.to_string()),
-            _ => color(90, "-"),
+            _ => color(BRIGHT_BLACK, "-"),
         }
     }
+    
+    // Print title
+    println!("{}:", title);
 
     // Build header and rows with styling
     let header = vec![
-        bold_color(36, "Package"),                  // cyan
-        bold_color(37, "Declared"),                 // white
-        bold_color(32, "Latest"),                   // green
-        bold_color(34, "Latest (same major)"),      // blue
-        bold_color(35, "Latest (same minor)"),      // magenta
-        bold_color(33, "Latest (satisfying)"),      // yellow
+        bold_color(CYAN, "Package"),                  // cyan
+        bold_color(WHITE, "Declared"),                // white
+        bold_color(GREEN, "Latest"),                  // green
+        bold_color(BLUE, "Latest (same major)"),      // blue
+        bold_color(MAGENTA, "Latest (same minor)"),   // magenta
+        bold_color(YELLOW, "Latest (satisfying)"),    // yellow
     ];
 
     let mut table: Vec<Vec<String>> = Vec::with_capacity(rows.len() + 1);
@@ -75,30 +109,30 @@ pub fn print_report_table(rows: &[PackageVersionInfo]) {
         row.push(bold(&r.name)); // package name
 
         // Declared
-        row.push(bold_color(37, r.declared.as_str()));
+        row.push(bold_color(WHITE, r.declared.as_str()));
 
         // Latest
-        row.push(fmt_ver(&r.latest, &r.latest_time, |s| bold_color(32, s)));
+        row.push(fmt_ver(&r.latest, &r.latest_time, |s| bold_color(GREEN, s)));
 
         // Latest (same major)
         row.push(fmt_ver(
             &r.latest_same_major,
             &r.latest_same_major_time,
-            |s| bold_color(34, s),
+            |s| bold_color(BLUE, s),
         ));
 
         // Latest (same minor)
         row.push(fmt_ver(
             &r.latest_same_minor,
             &r.latest_same_minor_time,
-            |s| bold_color(35, s),
+            |s| bold_color(MAGENTA, s),
         ));
 
         // Latest (satisfying)
         row.push(fmt_ver(
             &r.latest_satisfying,
             &r.latest_satisfying_time,
-            |s| bold_color(33, s),
+            |s| bold_color(YELLOW, s),
         ));
 
         table.push(row);

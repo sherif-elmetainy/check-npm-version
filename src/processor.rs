@@ -1,11 +1,8 @@
 use crate::http::build_http_client;
 use crate::npm::{get_package_info, PackageJson};
-use crate::report::{print_report_table};
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use semver::{Version, VersionReq};
-use std::path::PathBuf;
-use std::{fs};
 
 // Report row describing versions for a package
 #[derive(Debug)]
@@ -21,6 +18,14 @@ pub struct PackageVersionInfo {
     pub latest_satisfying: Option<Version>,
     pub latest_satisfying_time: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug)]
+pub struct PackageJsonReport {
+    pub dev_dependencies: Vec<PackageVersionInfo>,
+    pub dependencies: Vec<PackageVersionInfo>,
+    pub peer_dependencies: Vec<PackageVersionInfo>,
+}
+
 pub async fn process_package(
     client: &Client,
     package_name: String,
@@ -118,31 +123,33 @@ pub async fn process_package(
     Ok(row)
 }
 
-pub async fn process_package_json(path: PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn process_package_json(pkg_json_text: String) -> Result<PackageJsonReport, Box<dyn std::error::Error>> {
     // Read and parse package.json
-    let pkg_json_text = fs::read_to_string(&path)?;
     let mut pkg: PackageJson = serde_json::from_str(&pkg_json_text)?;
     let client = build_http_client()?;
-    let mut result: Vec<PackageVersionInfo> = Vec::new();
+    let mut result = PackageJsonReport {
+        dev_dependencies: vec![],
+        dependencies: vec![],
+        peer_dependencies: vec![],
+    };
 
     // loop through dependencies
     for (name, version) in std::mem::take(&mut pkg.dependencies) {
         let row = process_package(&client, name, version).await?;
-        result.push(row);
+        result.dependencies.push(row);       
     }
 
     for (name, version) in std::mem::take(&mut pkg.dev_dependencies) {
         let row = process_package(&client, name, version).await?;
-        result.push(row);
+        result.dev_dependencies.push(row);       
+        
     }
 
     for (name, version) in std::mem::take(&mut pkg.peer_dependencies) {
         let row = process_package(&client, name, version).await?;
-        result.push(row);
+        result.peer_dependencies.push(row);       
     }
+    
 
-    // Render the collected rows as a pretty, colored table
-    print_report_table(&result);
-
-    Ok(())
+    Ok(result)
 }
