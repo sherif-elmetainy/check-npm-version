@@ -1,23 +1,37 @@
 use crate::http::build_http_client;
 use crate::npm::{get_package_info, PackageJson};
-use crate::report::{print_report_table, PackageReportRow};
-use chrono::{DateTime};
+use crate::report::{print_report_table};
+use chrono::{DateTime, Utc};
 use reqwest::Client;
 use semver::{Version, VersionReq};
 use std::path::PathBuf;
 use std::{fs};
 
+// Report row describing versions for a package
+#[derive(Debug)]
+pub struct PackageVersionInfo {
+    pub name: String,
+    pub declared: String,
+    pub latest: Option<Version>,
+    pub latest_time: Option<DateTime<Utc>>,
+    pub latest_same_major: Option<Version>,
+    pub latest_same_major_time: Option<DateTime<Utc>>,
+    pub latest_same_minor: Option<Version>,
+    pub latest_same_minor_time: Option<DateTime<Utc>>,
+    pub latest_satisfying: Option<Version>,
+    pub latest_satisfying_time: Option<DateTime<Utc>>,
+}
 pub async fn process_package(
     client: &Client,
     package_name: String,
     declared_version: String,
-) -> Result<PackageReportRow, Box<dyn std::error::Error>> {
+) -> Result<PackageVersionInfo, Box<dyn std::error::Error>> {
     let mut info = get_package_info(client, package_name.as_str()).await?;
 
     info.time.remove("created");
     info.time.remove("modified");
 
-    let mut row = PackageReportRow {
+    let mut row = PackageVersionInfo {
         name: package_name,
         declared: declared_version,
         latest: None,
@@ -109,7 +123,7 @@ pub async fn process_package_json(path: PathBuf) -> Result<(), Box<dyn std::erro
     let pkg_json_text = fs::read_to_string(&path)?;
     let mut pkg: PackageJson = serde_json::from_str(&pkg_json_text)?;
     let client = build_http_client()?;
-    let mut result: Vec<PackageReportRow> = Vec::new();
+    let mut result: Vec<PackageVersionInfo> = Vec::new();
 
     // loop through dependencies
     for (name, version) in std::mem::take(&mut pkg.dependencies) {

@@ -1,23 +1,9 @@
 use chrono::{DateTime, Utc};
 use semver::Version;
-
-// Report row describing versions for a package
-#[derive(Debug)]
-pub struct PackageReportRow {
-    pub name: String,
-    pub declared: String,
-    pub latest: Option<Version>,
-    pub latest_time: Option<DateTime<Utc>>,
-    pub latest_same_major: Option<Version>,
-    pub latest_same_major_time: Option<DateTime<Utc>>,
-    pub latest_same_minor: Option<Version>,
-    pub latest_same_minor_time: Option<DateTime<Utc>>,
-    pub latest_satisfying: Option<Version>,
-    pub latest_satisfying_time: Option<DateTime<Utc>>,
-}
+use crate::processor::PackageVersionInfo;
 
 // Pretty ANSI table printer for PackageReportRow
-pub fn print_report_table(rows: &[PackageReportRow]) {
+pub fn print_report_table(rows: &[PackageVersionInfo]) {
     // ANSI helpers
     const RESET: &str = "\x1b[0m";
     fn bold(s: &str) -> String {
