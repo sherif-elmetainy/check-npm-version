@@ -2,12 +2,16 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use crate::{log_debug, log_trace, log_warn};
 use crate::processor::package_info::process_package_json;
 use crate::types::PackageJsonReport;
 
 pub async fn get_report(path: &str) -> Result<PackageJsonReport, Box<dyn std::error::Error>> {
+    log_debug!("Processing package.json at {}", path);
     let pkg_json_text = get_package_json(path)?;
+    log_trace!("Package.json text: {}", pkg_json_text);
     let report = process_package_json(pkg_json_text).await?;
+    log_trace!("Report: {:?}", report);
     Ok(report)
 }
 
@@ -35,6 +39,7 @@ fn get_package_json(path: &str) -> Result<String, io::Error> {
 fn resolve_package_path(arg: &str) -> Result<PathBuf, io::Error> {
     let path = Path::new(&arg);
     let metadata = path.metadata().map_err(|e| {
+        log_warn!("Error: {}", e.to_string());
         io::Error::new(
             e.kind(),
             format!("path {} is not valid: {}", arg, e.to_string()),
@@ -44,6 +49,7 @@ fn resolve_package_path(arg: &str) -> Result<PathBuf, io::Error> {
     let file_path = if metadata.is_dir() {
         let path = path.join("package.json");
         let metadata = path.metadata().map_err(|e| {
+            log_warn!("Error: {}", e.to_string());
             io::Error::new(
                 e.kind(),
                 format!(
@@ -54,6 +60,7 @@ fn resolve_package_path(arg: &str) -> Result<PathBuf, io::Error> {
             )
         })?;
         if !metadata.is_file() {
+            log_warn!("package.json is not a file");
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
                 format!(
