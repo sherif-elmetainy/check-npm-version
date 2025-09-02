@@ -15,21 +15,15 @@ const BRIGHT_BLACK: u8 = 90;
 pub fn print_report(report: &PackageJsonReport) {
     let mut separator_line = false;
     // Print dependency table
-    if !report.dependencies.is_empty() {
-        print_report_table("Dependencies", &report.dependencies);
-        separator_line = true;       
-    }
-    if !report.dev_dependencies.is_empty() {
-        if separator_line {
-            println!();       
-        }
-        print_report_table("Development Dependencies", &report.dev_dependencies);
-    }
-    if !report.peer_dependencies.is_empty() {
+    for (dependency_type, rows) in &report.dependencies {
         if separator_line {
             println!();
         }
-        print_report_table("Peed Dependencies", &report.peer_dependencies);
+        if rows.is_empty() {
+            continue;
+        }
+        separator_line = true;
+        print_report_table(dependency_type.to_string().as_str(), rows);
     }
     
 }

@@ -10,6 +10,8 @@ pub struct PackageJson {
     pub dev_dependencies: BTreeMap<String, String>,
     #[serde(rename = "peerDependencies", default)]
     pub peer_dependencies: BTreeMap<String, String>,
+    #[serde(rename = "optionalDependencies", default)]
+    pub optional_dependencies: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Deserialize)]

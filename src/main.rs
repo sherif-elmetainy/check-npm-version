@@ -3,6 +3,7 @@ mod http;
 mod npm;
 mod report;
 mod processor;
+mod upgrade;
 
 #[tokio::main]
 async fn main() {
