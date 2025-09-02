@@ -1,6 +1,6 @@
-use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
-use reqwest::Client;
 use std::time::Duration;
+use reqwest::Client;
+use reqwest::header::{HeaderMap, HeaderValue, USER_AGENT};
 
 pub fn build_http_client() -> Result<Client, Box<dyn std::error::Error>> {
     let mut headers = HeaderMap::new();

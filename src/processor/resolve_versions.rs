@@ -1,31 +1,10 @@
-use std::collections::BTreeMap;
-use crate::http::build_http_client;
-use crate::npm::{get_package_info, PackageJson};
-use chrono::{DateTime, Utc};
+use chrono::DateTime;
 use reqwest::Client;
 use semver::{Version, VersionReq};
-use crate::upgrade::{DependencyType};
+use crate::processor::package_info::get_package_info;
+use crate::types::PackageVersionInfo;
 
-// Report row describing versions for a package
-#[derive(Debug)]
-pub struct PackageVersionInfo {
-    pub name: String,
-    pub declared: String,
-    pub latest: Option<Version>,
-    pub latest_time: Option<DateTime<Utc>>,
-    pub latest_same_major: Option<Version>,
-    pub latest_same_major_time: Option<DateTime<Utc>>,
-    pub latest_same_minor: Option<Version>,
-    pub latest_same_minor_time: Option<DateTime<Utc>>,
-    pub latest_satisfying: Option<Version>,
-    pub latest_satisfying_time: Option<DateTime<Utc>>,
-}
-
-pub struct PackageJsonReport {
-    pub dependencies: BTreeMap<DependencyType, Vec<PackageVersionInfo>>,
-}
-
-pub async fn process_package(
+pub async fn resolve_versions(
     client: &Client,
     package_name: String,
     declared_version: String,
@@ -120,41 +99,4 @@ pub async fn process_package(
         };
     }
     Ok(row)
-}
-
-pub async fn process_package_json(pkg_json_text: String) -> Result<PackageJsonReport, Box<dyn std::error::Error>> {
-    // Read and parse package.json
-    let mut pkg: PackageJson = serde_json::from_str(&pkg_json_text)?;
-    let client = build_http_client()?;
-    let mut result = PackageJsonReport {
-        dependencies: BTreeMap::new(),
-    };
-
-    result.dependencies.insert(DependencyType::Normal, vec![]);
-    // loop through dependencies
-    for (name, version) in std::mem::take(&mut pkg.dependencies) {
-        let row = process_package(&client, name, version).await?;
-        result.dependencies.get_mut(&DependencyType::Normal).unwrap().push(row);       
-    }
-
-    result.dependencies.insert(DependencyType::Dev, vec![]);
-    for (name, version) in std::mem::take(&mut pkg.dev_dependencies) {
-        let row = process_package(&client, name, version).await?;
-        result.dependencies.get_mut(&DependencyType::Dev).unwrap().push(row);
-    }
-
-    result.dependencies.insert(DependencyType::Peer, vec![]);   
-    for (name, version) in std::mem::take(&mut pkg.peer_dependencies) {
-        let row = process_package(&client, name, version).await?;
-        result.dependencies.get_mut(&DependencyType::Peer).unwrap().push(row);
-    }
-
-    result.dependencies.insert(DependencyType::Optional, vec![]);
-    for (name, version) in std::mem::take(&mut pkg.optional_dependencies) {
-        let row = process_package(&client, name, version).await?;
-        result.dependencies.get_mut(&DependencyType::Optional).unwrap().push(row);
-    }
-    
-
-    Ok(result)
 }

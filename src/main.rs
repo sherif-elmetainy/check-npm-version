@@ -1,9 +1,9 @@
 mod cli;
-mod http;
-mod npm;
 mod report;
 mod processor;
 mod upgrade;
+mod util;
+mod types;
 
 #[tokio::main]
 async fn main() {
