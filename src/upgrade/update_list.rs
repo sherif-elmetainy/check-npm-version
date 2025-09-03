@@ -16,8 +16,8 @@ pub fn get_update_list(packages: Vec<PackageVersionInfo>, upgrade_type: &Upgrade
             },
         };
         if let Some(version) = version {
-            let (spec, current) = if package.declared.starts_with('@') {
-                ("@", &package.declared[1..])
+            let (spec, current) = if package.declared.starts_with('~') {
+                ("~", &package.declared[1..])
             } else if package.declared.starts_with('^') {
                 ("^", &package.declared[1..])
             } else {
