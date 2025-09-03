@@ -23,6 +23,13 @@ pub enum CliSubCommand {
         "
         )]
         path: String,
+        #[arg(
+            short,
+            long,
+            help = "Do not include package that are already at the latest in the report.
+        "
+        )]
+        skip_latest: bool,
     },
     #[command(
         about = "Upgrades the packages package.json file",

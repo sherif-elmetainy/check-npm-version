@@ -16,9 +16,9 @@ pub async fn run() -> Result<(), Box<dyn Error>> {
 
     
     match args.command {
-        CliSubCommand::Report{path} => {
+        CliSubCommand::Report{path, skip_latest} => {
             let report = get_report(path.as_str()).await?;
-            print_report(&report);
+            print_report(&report, skip_latest);
         }
         CliSubCommand::Upgrade {
             path,

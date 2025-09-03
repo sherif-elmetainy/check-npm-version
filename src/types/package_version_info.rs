@@ -14,3 +14,17 @@ pub struct PackageVersionInfo {
     pub latest_satisfying: Option<Version>,
     pub latest_satisfying_time: Option<DateTime<Utc>>,
 }
+
+impl PackageVersionInfo {
+    pub fn is_latest(&self) -> bool {
+        let mut version = self.declared.as_str();
+        if version.starts_with("~") || version.starts_with("^") {
+            version = &version[1..];
+        }
+        let version = Version::parse(version);
+        if let Ok(version) = version {
+            return self.latest == Some(version);
+        }
+        false
+    }
+}

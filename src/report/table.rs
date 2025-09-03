@@ -58,7 +58,7 @@ fn fmt_ver(
 }
 
 // Pretty ANSI table printer for PackageReportRow
-pub fn print_report_table(title: &str, rows: &[PackageVersionInfo]) {
+pub fn print_report_table(title: &str, rows: &[&PackageVersionInfo]) {
     // Print title
     println!("{}:", title);
 
