@@ -9,8 +9,9 @@ pub async fn resolve_versions(
     client: &Client,
     package_name: String,
     declared_version: String,
+    npm_config: &crate::processor::npm_config::NpmConfig,
 ) -> Result<PackageVersionInfo, Box<dyn std::error::Error>> {
-    let mut info = get_package_info(client, package_name.as_str()).await?;
+    let mut info = get_package_info(client, package_name.as_str(), &npm_config).await?;
 
     info.time.remove("created");
     info.time.remove("modified");

@@ -3,6 +3,7 @@ use std::io;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use crate::{log_debug, log_trace, log_warn};
+use crate::processor::npm_config::NpmConfig;
 use crate::processor::package_info::process_package_json;
 use crate::types::PackageJsonReport;
 
@@ -10,10 +11,16 @@ pub async fn get_report(path: &str) -> Result<PackageJsonReport, Box<dyn std::er
     log_debug!("Processing package.json at {}", path);
     let pkg_json_text = get_package_json(path)?;
     log_trace!("Package.json text: {}", pkg_json_text);
-    let report = process_package_json(pkg_json_text).await?;
+
+    // load .npmrc
+    let mut npm_config = NpmConfig::new();
+    npm_config.load_for_project(path)?;
+
+    let report = process_package_json(pkg_json_text, &npm_config).await?;
     log_trace!("Report: {:?}", report);
     Ok(report)
 }
+
 
 fn get_package_json(path: &str) -> Result<String, io::Error> {
     
