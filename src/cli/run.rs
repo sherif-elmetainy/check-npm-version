@@ -10,22 +10,26 @@ use crate::util::{get_log_level, set_log_level};
 
 pub async fn run() -> Result<(), Box<dyn Error>> {
     let args = CliArgs::parse();
-    let path = args.path;
     let log_level = args.log_level.unwrap_or(crate::util::LogLevel::default());
     set_log_level(log_level);
-    log_info!("Path set to {}", path);
     log_info!("Log level set to {}", get_log_level());
 
-    let report = get_report(path.as_str()).await?;
+    
     match args.command {
-        CliSubCommand::Report{} => {
+        CliSubCommand::Report{path} => {
+            let report = get_report(path.as_str()).await?;
             print_report(&report);
         }
         CliSubCommand::Upgrade {
+            path,
             upgrade_type,
             package_manager,
         } => {
+            let report = get_report(path.as_str()).await?;
             upgrade_packages(path, report, package_manager, upgrade_type)?;
+        },
+        CliSubCommand::Version{} => {
+            println!("{} v{} ({})", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"), env!("CARGO_PKG_AUTHORS"));
         }
     }
 

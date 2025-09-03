@@ -4,10 +4,25 @@ use crate::types::{PackageManagerType, UpgradeType};
 #[derive(Subcommand, Debug)]
 pub enum CliSubCommand {
     #[command(
+        about = "Prints version information",
+        long_about = "Prints version information for this command line tool."
+    )]
+    Version{},
+    #[command(
         about = "Prints a report of the package.json file",
         long_about = "Prints a report of the package.json file."
     )]
     Report {
+        #[arg(
+            short,
+            long,
+            default_value = ".",
+            help = "The path to the package.json file. \
+        If not specified otherwise the package.json file of current directory is used.\
+        If path is a directory, the file package.json within the directory is used.\
+        "
+        )]
+        path: String,
     },
     #[command(
         about = "Upgrades the packages package.json file",
@@ -16,6 +31,16 @@ pub enum CliSubCommand {
         If the path is missing and an input is provided via stdin, the input is used."
     )]
     Upgrade {
+        #[arg(
+            short,
+            long,
+            default_value = ".",
+            help = "The path to the package.json file. \
+        If not specified otherwise the package.json file of current directory is used.\
+        If path is a directory, the file package.json within the directory is used.\
+        "
+        )]
+        path: String,
         #[arg(
             long = "type",
             short = 't',
