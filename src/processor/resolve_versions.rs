@@ -37,7 +37,7 @@ pub async fn resolve_versions(
             format!("{}: {}", row.declared, e.to_string()),
         )
     })?;
-    let declared_version = if row.declared.starts_with('@') || row.declared.starts_with('^') {
+    let declared_version = if row.declared.starts_with('~') || row.declared.starts_with('^') {
         log_debug!("declared version is a range: {}", row.declared);       
         Version::parse(&row.declared[1..])
     } else {
