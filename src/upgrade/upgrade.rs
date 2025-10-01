@@ -32,14 +32,23 @@ fn do_upgrade(package_manager: PackageManagerType, upgrade_type: UpgradeType, pa
         }
 
         args.append(&mut update_list);
+        let command_name = if cfg!(windows) && !package_manager.to_string().ends_with(".cmd") {
+            format!("{}.cmd", package_manager)
+        } else {
+            package_manager.to_string()
+        };
 
-        let status = Command::new(&package_manager.to_string())
+        let status = Command::new(command_name)
             .args(&args)
             .stdout(std::process::Stdio::inherit())
             .stderr(std::process::Stdio::inherit())
             .stdin(std::process::Stdio::inherit())
-            .status()?
+            .status()
             ;
+        if status.is_err() {
+            return Err(format!("{} failed with error {}", package_manager, status.unwrap_err()).into());       
+        }
+        let status = status.unwrap();
         if !status.success() {
             return Err(format!("{} failed with exit code {}", package_manager, status.code().unwrap()).into());
         }
