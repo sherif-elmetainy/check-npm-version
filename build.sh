@@ -7,6 +7,10 @@ pushd "${SCRIPT_DIR}" > /dev/null
 
 cargo build --release
 
-cp ./target/release/check-npm-version ~/.local/bin/
+if [[ "$(uname -o)" == "Msys" ]]; then
+  cp ./target/release/check-npm-version.exe ~/.local/
+else
+  cp ./target/release/check-npm-version ~/.local/bin/
+fi
 
 popd > /dev/null
