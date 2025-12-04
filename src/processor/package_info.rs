@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
-use reqwest::Client;
+use reqwest_middleware::ClientWithMiddleware;
 use crate::processor::resolve_versions::resolve_versions;
 use crate::types::{DependencyType, PackageInfo, PackageJson, PackageJsonReport};
 use crate::{log_debug, log_error, log_info, log_trace, util};
 use crate::processor::npm_config::NpmConfig;
 
 pub async fn get_package_info(
-    client: &Client,
+    client: &ClientWithMiddleware,
     package_name: &str,
     npm_config: &NpmConfig,
 ) -> Result<PackageInfo, Box<dyn std::error::Error>> {

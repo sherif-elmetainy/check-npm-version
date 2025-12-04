@@ -1,12 +1,13 @@
 use chrono::DateTime;
-use reqwest::Client;
+use reqwest_middleware::ClientWithMiddleware;
 use semver::{Version, VersionReq};
 use crate::{log_debug, log_trace, log_warn};
 use crate::processor::package_info::get_package_info;
 use crate::types::PackageVersionInfo;
 
+//noinspection RsUnwrap
 pub async fn resolve_versions(
-    client: &Client,
+    client: &ClientWithMiddleware,
     package_name: String,
     declared_version: String,
     npm_config: &crate::processor::npm_config::NpmConfig,
@@ -44,9 +45,9 @@ pub async fn resolve_versions(
         log_debug!("declared version is a specific version: {}", row.declared);
         Version::parse(row.declared.as_str())
     };
-    if declared_version.as_ref().is_ok() {
-        if !declared_version.as_ref().unwrap().pre.is_empty() {
-            log_debug!("not ignoring pre-release versions for package {}", row.name);       
+    if let Ok(version) = declared_version.as_ref() {
+        if !version.pre.is_empty() {
+            log_debug!("not ignoring pre-release versions for package {}", row.name);
             ignore_pre_release = false;
         } else {
             log_debug!("ignoring pre-release versions for package {}", row.name);
@@ -56,12 +57,16 @@ pub async fn resolve_versions(
     for (version, time) in std::mem::take(&mut info.time) {
         log_trace!("Processing version {} at {}", version, time);
         let parsed_version = Version::parse(&version).map_err(|e| {
-            log_warn!("Error parsing version: {} for package {}", version, row.name);
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!("{}: {}", version, e.to_string()),
             )
-        })?;
+        });
+        if parsed_version.is_err() {
+            log_warn!("Ignoring invalid version: {} for package {}", version, row.name);
+            continue;
+        }
+        let parsed_version = parsed_version?;
         if ignore_pre_release && !parsed_version.pre.is_empty() {
             log_trace!("Ignoring pre-release version {}", version);
             continue;
