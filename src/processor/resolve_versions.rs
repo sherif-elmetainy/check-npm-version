@@ -56,12 +56,16 @@ pub async fn resolve_versions(
     for (version, time) in std::mem::take(&mut info.time) {
         log_trace!("Processing version {} at {}", version, time);
         let parsed_version = Version::parse(&version).map_err(|e| {
-            log_warn!("Error parsing version: {} for package {}", version, row.name);
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 format!("{}: {}", version, e.to_string()),
             )
-        })?;
+        });
+        if parsed_version.is_err() {
+            log_warn!("Ignoring invalid version: {} for package {}", version, row.name);
+            continue;
+        }
+        let parsed_version = parsed_version?;
         if ignore_pre_release && !parsed_version.pre.is_empty() {
             log_trace!("Ignoring pre-release version {}", version);
             continue;
