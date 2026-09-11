@@ -1,1 +1,5 @@
 /target
+.mcp.json
+
+.idea/go.imports.xml
+.idea/editor.xml
